@@ -1,9 +1,80 @@
-import React, { useState, useRef } from "react";
-import { Editor, EditorState, RichUtils, getDefaultKeyBinding, CompositeDecorator, convertToRaw, convertFromRaw } from 'draft-js';
-import { Link, findLinkEntities } from './link'
+import React, { useState, useRef, useReducer } from "react";
+import { Editor, EditorState, RichUtils, getDefaultKeyBinding, CompositeDecorator, convertToRaw, convertFromRaw, SelectionState } from 'draft-js';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
 
 import 'draft-js/dist/Draft.css';
 import './richeditor.css'
+
+interface EditorStateType {
+    editorState: EditorState;
+    linkState: {
+        showUrlInput: boolean;
+        url: string;
+    }
+}
+
+const styles = {
+    root: {
+        fontFamily: '\'Georgia\', serif',
+        padding: 20,
+        width: 600,
+    },
+    buttons: {
+        marginBottom: 10,
+    },
+    urlInputContainer: {
+        marginBottom: 10,
+    },
+    urlInput: {
+        fontFamily: '\'Georgia\', serif',
+        marginRight: 10,
+        padding: 3,
+    },
+    editor: {
+        border: '1px solid #ccc',
+        cursor: 'text',
+        minHeight: 80,
+        padding: 10,
+    },
+    button: {
+        marginTop: 10,
+        textAlign: 'center',
+    },
+    link: {
+        color: '#3b5998',
+        textDecoration: 'underline',
+    },
+};
+
+export const findLinkEntities = (contentBlock: any, callback: any, contentState: any): void => {
+    contentBlock.findEntityRanges(
+        (character: any) => {
+            const entityKey = character.getEntity();
+            return (
+                entityKey !== null &&
+                contentState.getEntity(entityKey).getType() === 'LINK'
+            );
+        },
+        callback
+    );
+}
+export function Link(props: any) {
+    const { url } = props.contentState.getEntity(props.entityKey).getData();
+    return (
+        <div>
+            <a href={url} style={styles.link} >
+                {props.children}
+            </a>
+        </div>
+    )
+};
+
 const compositeDecorator = new CompositeDecorator([
     {
         strategy: findLinkEntities,
@@ -39,6 +110,115 @@ const StyleButton = (props: any) => {
         <span className={className} onMouseDown={onToggle}>
             {props.label}
         </span>
+    );
+}
+
+const LinkButton = (props: any) => {
+    const { state, onChange, setState } = props;
+    const { editorState } = state as EditorStateType;
+    const [linkState, setLinkState] = useState({ showUrlInput: false, url: "" })
+    let urlRef: any = useRef();
+    console.log(props);
+
+    const onMouseDown = (e: any) => {
+        e.preventDefault();
+    };
+    let className = 'RichEditor-styleButton';
+    if (props.active) {
+        className += ' RichEditor-activeButton';
+    }
+    const promptForLink = (e: any) => {
+        e.preventDefault();
+        const selection = editorState.getSelection();
+        if (!selection.isCollapsed()) {
+            const contentState = editorState.getCurrentContent();
+            const startKey = editorState.getSelection().getStartKey();
+            const startOffset = editorState.getSelection().getStartOffset();
+            const blockWithLinkAtBeginning = contentState.getBlockForKey(startKey);
+            const linkKey = blockWithLinkAtBeginning.getEntityAt(startOffset);
+
+            let url = '';
+            if (linkKey) {
+                const linkInstance = contentState.getEntity(linkKey);
+                url = linkInstance.getData().url;
+            }
+            linkState.showUrlInput = true;
+            linkState.url = url;
+            setLinkState({ ...linkState });
+            setTimeout(() => urlRef.current.focus(), 0);
+        }
+    };
+
+    const onUrlChange = (e: any) => {
+        console.log(e);
+        linkState.url = e.currentTarget.value;
+        setLinkState({ ...linkState });
+    }
+    const linkConfirm = (e: any) => {
+        e.preventDefault();
+        /*
+        const contentState = editorState.getCurrentContent();
+        const contentStateWithEntity = contentState.createEntity(
+            'LINK',
+            'MUTABLE',
+            { url: linkState.url }
+        );
+        const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
+        const newEditorState = EditorState.set(editorState, { currentContent: contentStateWithEntity });
+        setState({
+            editorState: RichUtils.toggleLink(
+                newEditorState,
+                newEditorState.getSelection(),
+                entityKey
+            ),
+            showURLInput: false,
+            urlValue: '',
+        }
+
+        */
+        linkState.showUrlInput = false;
+        setLinkState({ ...linkState });
+        console.log("linkConfirm");
+    }
+    const linkCancel = (e: any) => {
+        e.preventDefault();
+        linkState.showUrlInput = false;
+        setLinkState({ ...linkState });
+        console.log("linkCancel");
+    }
+    const linkRemove = (e: any) => {
+        e.preventDefault();
+        linkState.showUrlInput = false;
+        setLinkState({ ...linkState });
+        console.log("linkRemove");
+    }
+    return (
+        <React.Fragment>
+            <span className={className} onMouseDown={promptForLink}>
+                {props.label}
+            </span>
+            <Dialog open={linkState.showUrlInput} onClose={linkCancel}>
+                <DialogTitle>Subscribe</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        id="name"
+                        label="Email Address"
+                        type="email"
+                        fullWidth
+                        onChange={onUrlChange}
+                        variant="standard"
+                        inputRef={urlRef}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={linkCancel}>Cancel</Button>
+                    <Button onClick={linkRemove}>Remove</Button>
+                    <Button onClick={linkConfirm}>OK</Button>
+                </DialogActions>
+            </Dialog>
+        </React.Fragment>
     );
 }
 const BLOCK_TYPES = [
@@ -83,10 +263,9 @@ var INLINE_STYLES = [
     { label: 'Underline', style: 'UNDERLINE' },
     { label: 'Monospace', style: 'CODE' },
 ];
-
 const InlineStyleControls = (props: any) => {
-    const currentStyle = props.editorState.getCurrentInlineStyle();
-
+    const { editorState } = props;
+    const currentStyle = editorState.getCurrentInlineStyle();
     return (
         <div className="RichEditor-controls">
             {INLINE_STYLES.map((type) =>
@@ -101,20 +280,31 @@ const InlineStyleControls = (props: any) => {
         </div>
     );
 };
-const CustomInlineStyleControls = (props: any) => {
-    const currentStyle = props.editorState.getCurrentInlineStyle();
-
+const LinkStyleControls = (props: any) => {
+    const { state } = props;
+    const { editorState } = state;
+    const currentStyle = editorState.getCurrentInlineStyle();
     return (
         <div className="RichEditor-controls">
-            {INLINE_STYLES.map((type) =>
-                <StyleButton
-                    key={type.label}
-                    active={currentStyle.has(type.style)}
-                    label={type.label}
-                    onToggle={props.onToggle}
-                    style={type.style}
-                />
-            )}
+            <LinkButton
+                key={"Link"}
+                active={currentStyle.has("LINK")}
+                label={"Link"}
+                state={state}
+                {...props}
+                onChange={(state: EditorStateType) => {
+                    const contentState = editorState.getCurrentContent();
+                    const contentStateWithEntity = contentState.createEntity(
+                        'LINK',
+                        'MUTABLE',
+                        { url: editorState.link.urlValue }
+                    );
+                    const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
+                    const newEditorState = EditorState.set(editorState, { currentContent: contentStateWithEntity });
+
+                }}
+                style={"LINK"}
+            />
         </div>
     );
 };
@@ -160,16 +350,22 @@ const initData: any = {
     "entityMap": {}
 };
 
-export function EditorApp() {
-    const [editorState, setEditorState] = React.useState<any>(EditorState.createWithContent(convertFromRaw(initData), compositeDecorator));
-    console.log(convertToRaw(editorState.getCurrentContent()));
+export function EditorApp(props: any) {
+    const [state, setState] = React.useState<EditorStateType>({
+        editorState: EditorState.createWithContent(convertFromRaw(initData), compositeDecorator),
+        linkState: { showUrlInput: false, url: "" }
+    });
+    const { editorState, linkState } = state;
     const ref = useRef<HTMLInputElement>(null);
 
-    const onChange = (state: any) => setEditorState(state);
-    const handleKeyCommand = (command: any, editorState: any): any => {
-        const newState = RichUtils.handleKeyCommand(editorState, command);
-        if (newState) {
-            onChange(newState);
+    const onChange = (editorState: any) => {
+        state.editorState = editorState;
+        setState({ ...state });
+    }
+    const handleKeyCommand = (command: any, state: any): any => {
+        const newEditorState = RichUtils.handleKeyCommand(editorState, command);
+        if (newEditorState) {
+            onChange({ editorState: newEditorState });
             return true;
         }
         return false;
@@ -181,8 +377,8 @@ export function EditorApp() {
                 editorState,
                 4, /* maxDepth */
             );
-            if (newEditorState !== editorState) {
-                onChange(newEditorState);
+            if (newEditorState !== state.editorState) {
+                onChange({ editorState: newEditorState });
             }
             return;
         }
@@ -208,15 +404,10 @@ export function EditorApp() {
     }
 
     const toggleInlineStyle = (inlineStyle: any) => {
-        onChange(
-            RichUtils.toggleInlineStyle(
-                editorState,
-                inlineStyle
-            )
-        );
+        onChange(RichUtils.toggleInlineStyle(editorState, inlineStyle));
     }
-    const toggleCustomStyle = (inlineStyle: any) => {
-        console.log(inlineStyle)
+    const toggleLinkStyle = (inlineStyle: any) => {
+        onChange(RichUtils.toggleInlineStyle(editorState, inlineStyle));
     }
 
     return (
@@ -229,10 +420,12 @@ export function EditorApp() {
                 editorState={editorState}
                 onToggle={toggleInlineStyle}
             />
-            <CustomInlineStyleControls
-                editorState={editorState}
-                onToggle={toggleInlineStyle}
+            <LinkStyleControls
+                state={state}
+                setState={setState}
+                onToggle={toggleLinkStyle}
             />
+
             <div className={className}>
                 <Editor
                     blockStyleFn={getBlockStyle}
@@ -248,3 +441,4 @@ export function EditorApp() {
         </div>
     )
 }
+
