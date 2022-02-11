@@ -1,8 +1,15 @@
 import React, { useState, useRef } from "react";
 import { Editor, EditorState, RichUtils, getDefaultKeyBinding, CompositeDecorator, convertToRaw, convertFromRaw } from 'draft-js';
+import { Link, findLinkEntities } from './link'
 
 import 'draft-js/dist/Draft.css';
 import './richeditor.css'
+const compositeDecorator = new CompositeDecorator([
+    {
+        strategy: findLinkEntities,
+        component: Link,
+    }
+]);
 
 const styleMap = {
     CODE: {
@@ -94,50 +101,67 @@ const InlineStyleControls = (props: any) => {
         </div>
     );
 };
+const CustomInlineStyleControls = (props: any) => {
+    const currentStyle = props.editorState.getCurrentInlineStyle();
 
+    return (
+        <div className="RichEditor-controls">
+            {INLINE_STYLES.map((type) =>
+                <StyleButton
+                    key={type.label}
+                    active={currentStyle.has(type.style)}
+                    label={type.label}
+                    onToggle={props.onToggle}
+                    style={type.style}
+                />
+            )}
+        </div>
+    );
+};
+const initData: any = {
+    "blocks": [
+        {
+            "key": "ad6f8",
+            "text": "asdfadsfad",
+            "type": "unstyled",
+            "depth": 0,
+            "inlineStyleRanges": [],
+            "entityRanges": [],
+            "data": {}
+        },
+        {
+            "key": "8ccm",
+            "text": "Hello",
+            "type": "header-one",
+            "depth": 0,
+            "inlineStyleRanges": [],
+            "entityRanges": [],
+            "data": {}
+        },
+        {
+            "key": "37l4l",
+            "text": "こんにちは",
+            "type": "unstyled",
+            "depth": 0,
+            "inlineStyleRanges": [],
+            "entityRanges": [],
+            "data": {}
+        },
+        {
+            "key": "cnhts",
+            "text": "",
+            "type": "unstyled",
+            "depth": 0,
+            "inlineStyleRanges": [],
+            "entityRanges": [],
+            "data": {}
+        }
+    ],
+    "entityMap": {}
+};
 
 export function EditorApp() {
-    const [editorState, setEditorState] = React.useState<any>(EditorState.createWithContent(convertFromRaw({
-        "blocks": [
-            {
-                "key": "ad6f8",
-                "text": "asdfadsfad",
-                "type": "unstyled",
-                "depth": 0,
-                "inlineStyleRanges": [],
-                "entityRanges": [],
-                "data": {}
-            },
-            {
-                "key": "8ccm",
-                "text": "Hello",
-                "type": "header-one",
-                "depth": 0,
-                "inlineStyleRanges": [],
-                "entityRanges": [],
-                "data": {}
-            },
-            {
-                "key": "37l4l",
-                "text": "こんにちは",
-                "type": "unstyled",
-                "depth": 0,
-                "inlineStyleRanges": [],
-                "entityRanges": [],
-                "data": {}
-            },
-            {
-                "key": "cnhts",
-                "text": "",
-                "type": "unstyled",
-                "depth": 0,
-                "inlineStyleRanges": [],
-                "entityRanges": [],
-                "data": {}
-            }
-        ],
-        "entityMap": {}
-    })));
+    const [editorState, setEditorState] = React.useState<any>(EditorState.createWithContent(convertFromRaw(initData), compositeDecorator));
     console.log(convertToRaw(editorState.getCurrentContent()));
     const ref = useRef<HTMLInputElement>(null);
 
@@ -191,6 +215,9 @@ export function EditorApp() {
             )
         );
     }
+    const toggleCustomStyle = (inlineStyle: any) => {
+        console.log(inlineStyle)
+    }
 
     return (
         <div className="RichEditor-root">
@@ -199,6 +226,10 @@ export function EditorApp() {
                 onToggle={toggleBlockType}
             />
             <InlineStyleControls
+                editorState={editorState}
+                onToggle={toggleInlineStyle}
+            />
+            <CustomInlineStyleControls
                 editorState={editorState}
                 onToggle={toggleInlineStyle}
             />
