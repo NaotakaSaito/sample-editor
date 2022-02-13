@@ -242,7 +242,6 @@ export function EditorApp(props: any) {
     const toggleInlineStyle = (inlineStyle: any) => {
         onChange(RichUtils.toggleInlineStyle(editorState, inlineStyle));
     }
-    const toggleLinkStyle = onChange;
 
     return (
         <div className="RichEditor-root">
@@ -257,7 +256,7 @@ export function EditorApp(props: any) {
             <LinkStyleControls
                 state={state}
                 setState={setState}
-                onToggle={toggleLinkStyle}
+                onToggle={onChange}
             />
 
             <div className={className}>

@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
-import { EditorState, RichUtils, SelectionState, DraftDecorator, DraftDecoratorType } from 'draft-js';
-import { FormGroup, FormControlLabel, Checkbox, Button, TextField, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material'
-import { EditorStateType } from '../common';
+import React, { useState, useRef } from "react";
+import { EditorState, RichUtils, SelectionState, DraftDecorator } from 'draft-js';
+import { FormGroup, FormControlLabel, Checkbox, Button, TextField, Dialog, DialogActions, DialogContent } from '@mui/material'
+import { EditorStateType, EditorStateProps } from '../common';
 
 const styles = {
     link: {
@@ -9,6 +9,10 @@ const styles = {
         textDecoration: 'underline',
     },
 };
+interface LinkEditorProps extends EditorStateProps {
+    onToggle: (editorState: EditorState) => void;
+    open: boolean;
+}
 export const decorator: DraftDecorator = {
     strategy: (contentBlock, callback, contentState) => {
         contentBlock.findEntityRanges(
@@ -31,9 +35,9 @@ export const decorator: DraftDecorator = {
         )
     }
 };
-export const isActive = (props: any) => {
+export const isActive = (props: EditorStateProps) => {
     const { state } = props;
-    const { editorState } = state as EditorStateType;
+    const { editorState } = state;
     const contentState = editorState.getCurrentContent();
     const startKey = editorState.getSelection().getStartKey();
     const startOffset = editorState.getSelection().getStartOffset();
@@ -42,9 +46,9 @@ export const isActive = (props: any) => {
     return linkKey ? true : false;
 }
 
-export const isEnable = (props: any): boolean => {
+export const isEnable = (props: EditorStateProps): boolean => {
     const { state } = props;
-    const { editorState } = state as EditorStateType;
+    const { editorState } = state;
 
     const selection = editorState.getSelection();
     const isCollapsed = selection.isCollapsed();
@@ -59,9 +63,9 @@ export const isEnable = (props: any): boolean => {
     return false;
 }
 
-export const LinkDialog = (props: any) => {
+export const LinkDialog = (props: LinkEditorProps) => {
     const { state, onToggle } = props;
-    const { editorState } = state as EditorStateType;
+    const { editorState } = state;
     const [linkState, setLinkState] = useState<{ showUrlInput: boolean; url: string; disableRemove: boolean; targetBlank: boolean; linkKey: null | string }>({ showUrlInput: false, url: "", disableRemove: true, targetBlank: false, linkKey: null })
     let urlRef: any = useRef();
 
@@ -190,7 +194,7 @@ export const LinkDialog = (props: any) => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={linkCancel}>Cancel</Button>
-                    <Button onClick={linkRemove} disabled={linkState.disableRemove} >Remove</Button>
+                    <Button onClick={linkRemove} disabled={linkState.disableRemove}>Remove</Button>
                     <Button onClick={linkConfirm}>OK</Button>
                 </DialogActions>
             </Dialog>
