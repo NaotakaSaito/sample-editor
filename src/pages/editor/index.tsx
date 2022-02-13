@@ -1,82 +1,14 @@
 import React, { useState, useRef, useReducer } from "react";
-import { Editor, EditorState, RichUtils, getDefaultKeyBinding, CompositeDecorator, convertToRaw, convertFromRaw, SelectionState } from 'draft-js';
+import { Editor, EditorState, RichUtils, getDefaultKeyBinding, CompositeDecorator, convertToRaw, convertFromRaw, SelectionState, } from 'draft-js';
 import { stateToHTML } from 'draft-js-export-html';
-
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
+import * as Link from "./Components/Link"
+import { EditorStateType } from './common'
 
 import 'draft-js/dist/Draft.css';
 import './richeditor.css'
 
-interface EditorStateType {
-    editorState: EditorState;
-}
 
-const styles = {
-    root: {
-        fontFamily: '\'Georgia\', serif',
-        padding: 20,
-        width: 600,
-    },
-    buttons: {
-        marginBottom: 10,
-    },
-    urlInputContainer: {
-        marginBottom: 10,
-    },
-    urlInput: {
-        fontFamily: '\'Georgia\', serif',
-        marginRight: 10,
-        padding: 3,
-    },
-    editor: {
-        border: '1px solid #ccc',
-        cursor: 'text',
-        minHeight: 80,
-        padding: 10,
-    },
-    button: {
-        marginTop: 10,
-        textAlign: 'center',
-    },
-    link: {
-        color: '#3b5998',
-        textDecoration: 'underline',
-    },
-};
-
-export const findLinkEntities = (contentBlock: any, callback: any, contentState: any): void => {
-    contentBlock.findEntityRanges(
-        (character: any) => {
-            const entityKey = character.getEntity();
-            return (
-                entityKey !== null &&
-                contentState.getEntity(entityKey).getType() === 'LINK'
-            );
-        },
-        callback
-    );
-}
-export function Link(props: any) {
-    const { url } = props.contentState.getEntity(props.entityKey).getData();
-    return (
-        <a href={url} style={styles.link} >
-            {props.children}
-        </a>
-    )
-};
-
-const compositeDecorator = new CompositeDecorator([
-    {
-        strategy: findLinkEntities,
-        component: Link,
-    }
-]);
+const compositeDecorator = new CompositeDecorator([Link.decorator]);
 
 const styleMap = {
     CODE: {
@@ -109,119 +41,6 @@ const StyleButton = (props: any) => {
     );
 }
 
-const LinkButton = (props: any) => {
-    const { state, onToggle } = props;
-    const { editorState } = state as EditorStateType;
-    const [linkState, setLinkState] = useState<{ showUrlInput: boolean; url: string; linkKey: null | string }>({ showUrlInput: false, url: "", linkKey: null })
-    let urlRef: any = useRef();
-
-    let className = 'RichEditor-styleButton';
-    if (props.active) {
-        className += ' RichEditor-activeButton';
-    }
-    const promptForLink = (e: any) => {
-        e.preventDefault();
-        const selection = editorState.getSelection();
-        const isCollapsed = selection.isCollapsed();
-        //if (!selection.isCollapsed()) {
-        const contentState = editorState.getCurrentContent();
-        const startKey = editorState.getSelection().getStartKey();
-        const startOffset = editorState.getSelection().getStartOffset();
-        const blockWithLinkAtBeginning = contentState.getBlockForKey(startKey);
-        const linkKey = blockWithLinkAtBeginning.getEntityAt(startOffset);
-        let url = '';
-        if (linkKey) {
-            const linkInstance = contentState.getEntity(linkKey);
-            url = linkInstance.getData().url;
-        }
-        if (!isCollapsed || url) {
-            linkState.showUrlInput = true;
-            linkState.url = url;
-            linkState.linkKey = linkKey;
-            setLinkState({ ...linkState });
-            setTimeout(() => urlRef.current.focus(), 0);
-        }
-    };
-
-    const onUrlChange = (e: any) => {
-        linkState.url = e.currentTarget.value;
-        setLinkState({ ...linkState });
-    }
-    const linkConfirm = (e: any) => {
-        e.preventDefault();
-        const contentState = editorState.getCurrentContent();
-        const contentStateWithEntity = contentState.createEntity(
-            'LINK',
-            'MUTABLE',
-            { url: linkState.url }
-        );
-        const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
-        const newEditorState = EditorState.set(editorState, { currentContent: contentStateWithEntity });
-        const selection = newEditorState.getSelection();
-        onToggle(
-            RichUtils.toggleLink(
-                newEditorState,
-                selection,
-                entityKey
-            )
-        );
-        linkState.showUrlInput = false;
-        setLinkState({ ...linkState });
-        console.log("linkConfirm");
-    }
-    const linkRemove = (e: any) => {
-        e.preventDefault();
-        const selection = editorState.getSelection();
-        const contentState = editorState.getCurrentContent();
-        const beforeBlock = contentState.getBlockBefore(selection.getStartKey())
-        const endBlock = contentState.getBlockForKey(selection.getEndKey())
-        const blockSelection = new SelectionState({
-            anchorKey: beforeBlock?.getKey() || selection.getStartKey(),
-            anchorOffset: beforeBlock?.getLength() || 0,
-            focusKey: selection.getEndKey(),
-            focusOffset: endBlock.getLength(),
-        });
-        onToggle(RichUtils.toggleLink(editorState, blockSelection, null));
-        linkState.showUrlInput = false;
-        setLinkState({ ...linkState });
-        console.log("linkRemove");
-    }
-    const linkCancel = (e: any) => {
-        e.preventDefault();
-        linkState.showUrlInput = false;
-        setLinkState({ ...linkState });
-        console.log("linkCancel");
-    }
-    return (
-        <React.Fragment>
-            <span className={className} onMouseDown={promptForLink}>
-                {props.label}
-            </span>
-            <Dialog open={linkState.showUrlInput} onClose={linkCancel}>
-                <DialogTitle>Subscribe</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        defaultValue={linkState.url}
-                        margin="dense"
-                        id="name"
-                        label="Email Address"
-                        type="email"
-                        fullWidth
-                        onChange={onUrlChange}
-                        variant="standard"
-                        inputRef={urlRef}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={linkCancel}>Cancel</Button>
-                    <Button onClick={linkRemove} disabled={linkState.linkKey ? false : true} >Remove</Button>
-                    <Button onClick={linkConfirm}>OK</Button>
-                </DialogActions>
-            </Dialog>
-        </React.Fragment>
-    );
-}
 const BLOCK_TYPES = [
     { label: 'H1', style: 'header-one' },
     { label: 'H2', style: 'header-two' },
@@ -282,16 +101,26 @@ const InlineStyleControls = (props: any) => {
     );
 };
 const LinkStyleControls = (props: any) => {
-    const { state, onToggle } = props;
-    const { editorState } = state;
-    const currentStyle = editorState.getCurrentInlineStyle();
+    const [open, setOpen] = useState(false);
+    let className = 'RichEditor-styleButton';
+    if (Link.isActive(props)) {
+        className += ' RichEditor-activeButton';
+    }
+    const onToggle = (editorState: any) => {
+        setOpen(false);
+        props.onToggle(editorState);
+    }
     return (
         <div className="RichEditor-controls">
-            <LinkButton
+            <span className={className} onMouseDown={(e) => {
+                e.preventDefault();
+                if (Link.isEnable(props)) setOpen(true);
+            }}>Link
+            </span>
+            <Link.LinkDialog
                 key={"Link"}
-                active={currentStyle.has("LINK")}
+                open={open}
                 label={"Link"}
-                state={state}
                 {...props}
                 onToggle={onToggle}
                 style={"LINK"}
@@ -349,7 +178,8 @@ const initData: any = {
             "type": "LINK",
             "mutability": "MUTABLE",
             "data": {
-                "url": "https:/www/yahoo.co.jp"
+                "url": "https:/www.yahoo.co.jp",
+                "target": "_blank"
             }
         }
     }
@@ -360,8 +190,10 @@ export function EditorApp(props: any) {
         editorState: EditorState.createWithContent(convertFromRaw(initData), compositeDecorator)
     });
     const { editorState } = state;
-    //console.log(stateToHTML(editorState.getCurrentContent()));
-    console.log(convertToRaw(editorState.getCurrentContent()));
+    console.log({
+        html: stateToHTML(editorState.getCurrentContent()),
+        raw: convertToRaw(editorState.getCurrentContent())
+    });
 
     const onChange = (editorState: any) => {
         state.editorState = editorState;
