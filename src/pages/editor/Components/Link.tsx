@@ -142,7 +142,6 @@ export const LinkDialog = (props: LinkEditorProps) => {
             focusOffset: endBlock.getLength(),
         });
         onToggle(RichUtils.toggleLink(editorState, blockSelection, null));
-        linkState.showUrlInput = false;
         setLinkState({
             showUrlInput: false,
             url: "",
