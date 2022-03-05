@@ -1,7 +1,9 @@
 import React, { useState, useRef, useReducer } from "react";
 import { Editor, EditorState, RichUtils, getDefaultKeyBinding, CompositeDecorator, convertToRaw, convertFromRaw, SelectionState, } from 'draft-js';
+import { Box } from '@mui/material'
 import { stateToHTML } from 'draft-js-export-html';
 import * as Link from "./Components/Link"
+import { ColorPicker } from './Components/Color';
 import { EditorStateType } from './common'
 
 import 'draft-js/dist/Draft.css';
@@ -10,7 +12,11 @@ import './richeditor.css'
 
 const compositeDecorator = new CompositeDecorator([Link.decorator]);
 
-const styleMap = {
+const colors = ['#000000', '#D0021B', '#F5A623', '#F8E71C', '#8B572A', '#7ED321', '#417505',
+    '#BD10E0', '#9013FE', '#4A90E2', '#50E3C2', '#B8E986',
+    '#4A4A4A', '#9B9B9B', '#FFFFFF'];
+
+const styleMap: any = {
     CODE: {
         backgroundColor: 'rgba(0, 0, 0, 0.05)',
         fontFamily: '"Inconsolata", "Menlo", "Consolas", monospace',
@@ -18,6 +24,9 @@ const styleMap = {
         padding: 2,
     },
 };
+colors.forEach((elm) => {
+    styleMap[elm] = { color: elm }
+})
 function getBlockStyle(block: any): any {
     switch (block.getType()) {
         case 'blockquote': return 'RichEditor-blockquote';
@@ -63,7 +72,24 @@ const BlockStyleControls = (props: any) => {
         .getType();
 
     return (
-        <div className="RichEditor-controls">
+        <Box
+            component="div"
+            className="RichEditor-controls"
+            sx={{
+                display: 'inline',
+                p: 1,
+                m: 1,
+                bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#101010' : '#fff'),
+                color: (theme) =>
+                    theme.palette.mode === 'dark' ? 'grey.300' : 'grey.800',
+                border: '1px solid',
+                borderColor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'grey.800' : 'grey.300',
+                borderRadius: 2,
+                fontSize: '0.875rem',
+                fontWeight: '700',
+            }}
+        >
             {BLOCK_TYPES.map((type) =>
                 <StyleButton
                     key={type.label}
@@ -73,7 +99,7 @@ const BlockStyleControls = (props: any) => {
                     style={type.style}
                 />
             )}
-        </div>
+        </Box>
     );
 };
 
@@ -87,7 +113,25 @@ const InlineStyleControls = (props: any) => {
     const { editorState } = props;
     const currentStyle = editorState.getCurrentInlineStyle();
     return (
-        <div className="RichEditor-controls">
+        <Box
+            component="div"
+            className="RichEditor-controls"
+            sx={{
+                display: 'inline',
+                p: 1,
+                m: 1,
+                bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#101010' : '#fff'),
+                color: (theme) =>
+                    theme.palette.mode === 'dark' ? 'grey.300' : 'grey.800',
+                border: '1px solid',
+                borderColor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'grey.800' : 'grey.300',
+                borderRadius: 2,
+                fontSize: '0.875rem',
+                fontWeight: '700',
+            }}
+        >
+
             {INLINE_STYLES.map((type) =>
                 <StyleButton
                     key={type.label}
@@ -97,7 +141,7 @@ const InlineStyleControls = (props: any) => {
                     style={type.style}
                 />
             )}
-        </div>
+        </Box>
     );
 };
 const LinkStyleControls = (props: any) => {
@@ -111,7 +155,7 @@ const LinkStyleControls = (props: any) => {
         props.onToggle(editorState);
     }
     return (
-        <div className="RichEditor-controls">
+        <React.Fragment>
             <span className={className} onMouseDown={(e) => {
                 e.preventDefault();
                 if (Link.isEnable(props)) setOpen(true);
@@ -125,7 +169,7 @@ const LinkStyleControls = (props: any) => {
                 onToggle={onToggle}
                 style={"LINK"}
             />
-        </div>
+        </React.Fragment>
     );
 };
 const initData: any = {
@@ -245,19 +289,45 @@ export function EditorApp(props: any) {
 
     return (
         <div className="RichEditor-root">
-            <BlockStyleControls
-                editorState={editorState}
-                onToggle={toggleBlockType}
-            />
-            <InlineStyleControls
-                editorState={editorState}
-                onToggle={toggleInlineStyle}
-            />
-            <LinkStyleControls
-                state={state}
-                setState={setState}
-                onToggle={onChange}
-            />
+            <div style={{ width: '100%' }}>
+                <BlockStyleControls
+                    editorState={editorState}
+                    onToggle={toggleBlockType}
+                />
+                <InlineStyleControls
+                    editorState={editorState}
+                    onToggle={toggleInlineStyle}
+                />
+                <Box
+                    component="div"
+                    className="RichEditor-controls"
+                    sx={{
+                        display: 'inline',
+                        p: 1,
+                        m: 1,
+                        bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#101010' : '#fff'),
+                        color: (theme) =>
+                            theme.palette.mode === 'dark' ? 'grey.300' : 'grey.800',
+                        border: '1px solid',
+                        borderColor: (theme) =>
+                            theme.palette.mode === 'dark' ? 'grey.800' : 'grey.300',
+                        borderRadius: 2,
+                        fontSize: '0.875rem',
+                        fontWeight: '700',
+                    }}
+                >
+
+                    <LinkStyleControls
+                        state={state}
+                        onToggle={onChange}
+                    />
+                    <ColorPicker
+                        state={state}
+                        colors={colors}
+                        onToggle={onChange}
+                    />
+                </Box>
+            </div>
 
             <div className={className}>
                 <Editor
