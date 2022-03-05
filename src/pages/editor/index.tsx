@@ -1,7 +1,8 @@
-import React, { useState, useRef, useReducer } from "react";
+import React, { useState, useRef, useReducer} from "react";
 import { Editor, EditorState, RichUtils, getDefaultKeyBinding, CompositeDecorator, convertToRaw, convertFromRaw, SelectionState, } from 'draft-js';
 import { stateToHTML } from 'draft-js-export-html';
 import * as Link from "./Components/Link"
+import * as Image from "./Components/Image"
 import { EditorStateType } from './common'
 
 import 'draft-js/dist/Draft.css';
@@ -128,6 +129,36 @@ const LinkStyleControls = (props: any) => {
         </div>
     );
 };
+
+const ImageStyleControls = (props: any) => {
+
+    const [open, setOpen] = useState(false);
+    let className = 'RichEditor-styleButton';
+
+    const onToggle = (editorState: any) => {
+        setOpen(false);
+        props.onToggle(editorState);
+    }
+
+    return (
+        <div className="RichEditor-controls">
+            <span className={className} onMouseDown={(e) => {
+                e.preventDefault();
+                setOpen(true);
+            }}>Image
+            </span>
+            <Image.ImageDialog 
+                key={"Image"}
+                open={open}
+                label={"Image"}
+                {...props}
+                onToggle={onToggle}
+                style={"IMAGE"}
+            />
+        </div>
+    )
+};
+
 const initData: any = {
     "blocks": [
         {
@@ -171,6 +202,34 @@ const initData: any = {
             "inlineStyleRanges": [],
             "entityRanges": [],
             "data": {}
+        },
+        {
+            key: "98peb",
+            text: "https://cdn-ak.f.st-hatena.com/images/fotolife/k/kota_ly/20220214/20220214194911.png",
+            type: "atomic",
+            depth: 0,
+            inlineStyleRanges: [],
+            entityRanges: [
+                {
+                    offset: 0,
+                    length: 1,
+                    key: 1,
+                }
+            ]
+        },
+        {
+            key: "98pec",
+            text: "https://cdn-ak.f.st-hatena.com/images/fotolife/k/kota_ly/20220214/20220214194911.png",
+            type: "atomic",
+            depth: 0,
+            inlineStyleRanges: [],
+            entityRanges: [
+                {
+                    offset: 0,
+                    length: 1,
+                    key: 2,
+                }
+            ]
         }
     ],
     "entityMap": {
@@ -181,8 +240,22 @@ const initData: any = {
                 "url": "https:/www.yahoo.co.jp",
                 "target": "_blank"
             }
-        }
-    }
+        },
+        1: {
+            "type": "IMAGE",
+            "mutability": "IMMUTABLE",
+            "data": { 
+                "src": "https://cdn-ak.f.st-hatena.com/images/fotolife/k/kota_ly/20220214/20220214194911.png"
+            },
+        },
+        2: {
+            "type": "IMAGE",
+            "mutability": "IMMUTABLE",
+            "data": { 
+                "src": "https://cdn-ak.f.st-hatena.com/images/fotolife/k/kota_ly/20220214/20220214194911.png"
+            },
+        },
+    },
 }
 
 export function EditorApp(props: any) {
@@ -222,7 +295,6 @@ export function EditorApp(props: any) {
         return getDefaultKeyBinding(e);
     }
 
-
     const contentState = editorState.getCurrentContent();
     let className = 'RichEditor-editor';
 
@@ -243,6 +315,16 @@ export function EditorApp(props: any) {
         onChange(RichUtils.toggleInlineStyle(editorState, inlineStyle));
     }
 
+    const myBlockRenderer = (block: any) => {
+        if(block.getType() === "atomic") {
+            return {
+                component: Image.Media,
+                editable: false,
+            };
+        }
+        return null
+    }
+
     return (
         <div className="RichEditor-root">
             <BlockStyleControls
@@ -258,6 +340,11 @@ export function EditorApp(props: any) {
                 setState={setState}
                 onToggle={onChange}
             />
+            <ImageStyleControls
+                state={state}
+                setState={setState}
+                onToggle={onChange}
+            />
 
             <div className={className}>
                 <Editor
@@ -269,6 +356,7 @@ export function EditorApp(props: any) {
                     onChange={onChange}
                     placeholder="Tell a story..."
                     spellCheck={true}
+                    blockRendererFn={myBlockRenderer}
                 />
             </div>
         </div>
