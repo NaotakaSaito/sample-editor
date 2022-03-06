@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { EditorState, RichUtils, SelectionState, DraftDecorator } from 'draft-js';
+import React, { useState, useRef} from "react";
+import { EditorState, RichUtils, SelectionState, DraftDecorator, convertToRaw } from 'draft-js';
 import { FormGroup, FormControlLabel, Checkbox, Button, TextField, Dialog, DialogActions, DialogContent } from '@mui/material'
 import { EditorStateType, EditorStateProps } from '../common';
 
@@ -119,7 +119,10 @@ export const LinkDialog = (props: LinkEditorProps) => {
                     selection,
                     entityKey
                 )
-            );
+            )
+            console.log("### EditorState after onToggle ###")
+            console.log({raw: convertToRaw(editorState.getCurrentContent())});
+            
         }
         setLinkState({
             showUrlInput: false,

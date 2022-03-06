@@ -3,6 +3,7 @@ import { Editor, EditorState, RichUtils, getDefaultKeyBinding, CompositeDecorato
 import { Box } from '@mui/material'
 import { stateToHTML } from 'draft-js-export-html';
 import * as Link from "./Components/Link"
+import * as Image from "./Components/Image"
 import { ColorPicker } from './Components/Color';
 import { EditorStateType } from './common'
 
@@ -172,6 +173,34 @@ const LinkStyleControls = (props: any) => {
         </React.Fragment>
     );
 };
+
+const ImageStyleControls = (props: any) => {
+
+    const [open, setOpen] = useState(false);
+    let className = 'RichEditor-styleButton';
+    const onToggle = (editorState: any) => {
+        setOpen(false);
+        props.onToggle(editorState);
+    }
+    return (
+        <React.Fragment>
+            <span className={className} onMouseDown={(e) => {
+                e.preventDefault();
+                if (Image.isEnable(props)) setOpen(true);
+            }}>Image
+            </span>
+            <Image.ImageDialog
+                key={"Image"}
+                open={open}
+                label={"Image"}
+                {...props}
+                onToggle={onToggle}
+                style={"IMAGE"}
+            />
+        </React.Fragment>
+    )
+};
+
 const initData: any = {
     "blocks": [
         {
@@ -238,7 +267,6 @@ export function EditorApp(props: any) {
         html: stateToHTML(editorState.getCurrentContent()),
         raw: convertToRaw(editorState.getCurrentContent())
     });
-
     const onChange = (editorState: any) => {
         state.editorState = editorState;
         setState({ ...state });
@@ -246,7 +274,7 @@ export function EditorApp(props: any) {
     const handleKeyCommand = (command: any, state: any): any => {
         const newEditorState = RichUtils.handleKeyCommand(editorState, command);
         if (newEditorState) {
-            onChange({ editorState: newEditorState });
+            onChange(newEditorState);
             return true;
         }
         return false;
@@ -265,7 +293,6 @@ export function EditorApp(props: any) {
         }
         return getDefaultKeyBinding(e);
     }
-
 
     const contentState = editorState.getCurrentContent();
     let className = 'RichEditor-editor';
@@ -321,6 +348,11 @@ export function EditorApp(props: any) {
                         state={state}
                         onToggle={onChange}
                     />
+                    <ImageStyleControls
+                        state={state}
+                        setState={setState}
+                        onToggle={onChange}
+                    />
                     <ColorPicker
                         state={state}
                         colors={colors}
@@ -339,6 +371,7 @@ export function EditorApp(props: any) {
                     onChange={onChange}
                     placeholder="Tell a story..."
                     spellCheck={true}
+                    blockRendererFn={Image.mediaBlockRenderer}
                 />
             </div>
         </div>
