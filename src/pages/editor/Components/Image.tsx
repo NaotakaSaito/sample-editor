@@ -1,5 +1,5 @@
-import React, { useState, useRef} from "react";
-import { EditorState, RichUtils,  DraftDecorator, ContentState, convertToRaw, Modifier } from 'draft-js';
+import React, { useState } from "react";
+import { EditorState, AtomicBlockUtils } from 'draft-js';
 import { FormGroup, FormControlLabel, Checkbox, Button, TextField, Dialog, DialogActions, DialogContent } from '@mui/material'
 import { EditorStateType, EditorStateProps } from '../common';
 import { BooleanLiteral } from "typescript";
@@ -17,11 +17,29 @@ interface ImageEditorProps extends EditorStateProps {
     open: boolean;
 }
 
+export const isEnable = (props: EditorStateProps): boolean => {
+    const { state } = props;
+    const { editorState } = state;
+    const selection = editorState.getSelection();
+    const isCollapsed = selection.isCollapsed();
+    return isCollapsed;
+}
 
 // 画像表示タグ生成コンポーネント
 const Imgtag = (props: any) => {
     return <img src={props.src} alt="" />;
 };
+
+export const mediaBlockRenderer = (block: Draft.ContentBlock) => {
+    if (block.getType() === 'atomic') {
+        return {
+            component: Media,
+            editable: false,
+        };
+    }
+    return null;
+}
+
 
 // 
 export const Media = (props: any) => {
@@ -29,9 +47,9 @@ export const Media = (props: any) => {
     const { src } = entity.getData();
     const type = entity.getType();
 
-    let media = null;
+    let media;
     if (type === "IMAGE") {
-        media = <Imgtag src={ src }  />;
+        media = <Imgtag src={src} />;
     }
     return media;
 }
@@ -39,58 +57,16 @@ export const Media = (props: any) => {
 export const ImageDialog = (props: ImageEditorProps) => {
     const { state, onToggle } = props;
     const { editorState } = state;
-    const [imageState, setImageState] = useState<{ showUrlInput: boolean; src: string; disableRemove: boolean; imageKey: null | string}>
-        ({ showUrlInput: false,   src: "",     disableRemove: true,  imageKey: null})
-    let urlRef: any = useRef();
+    const [imageState, setImageState] = useState<{ showUrlInput: boolean; src: string; imageKey: null | string }>
+        ({ showUrlInput: false, src: "", imageKey: null })
 
-    if (props.open === true && imageState.showUrlInput === false) {
-        const selection = editorState.getSelection();
-        const isCollapsed = selection.isCollapsed();    // 網掛け時 false
-        //console.log("### isCollapsed ### ");
-        //console.log(isCollapsed);
-        const contentState = editorState.getCurrentContent();   //
-        //console.log("### contentState ###");
-        //console.log(contentState);
-        const startKey = selection.getStartKey();   // カーソル箇所 block の key
-        //console.log("### startKey ###");
-        //console.log(startKey);
-        const startOffset = editorState.getSelection().getStartOffset();    // 左端を0としてカーソル選択位置までの文字数
-        //console.log("### startOffset ###");
-        //console.log(startOffset);
-        const blockWithLinkAtBeginning = contentState.getBlockForKey(startKey); // startKey の ブロック情報を取得
-        //console.log("### blockWithLinkAtBeginning ###");
-        //console.log(blockWithLinkAtBeginning);
-        const imageKey = blockWithLinkAtBeginning.getEntityAt(startOffset);
-        //console.log("### imageKey ### ");      // ブロック内、カーソル選択位置にリンクが指定されているか
-        //console.log(imageKey);
-        const activeBlocksText = blockWithLinkAtBeginning.getText();    // カーソルを当てたブロックのテキスト取得
-        //console.log("### imageText ###")
-        //console.log(activeBlocksText);
-
-
-        // if (imageKey) {     // リンクが設定されている時　設定済みの情報を imageStateに格納
-        //     const imageInstance = contentState.getEntity(imageKey);
-        //     const data = imageInstance.getData();
-        //     imageState.url = data.url;
-        //     imageState.targetBlank = data.target ? true : false;
-        //     imageState.disableRemove = false;
-        // } else {    // リンクが無い時　初期化？
-        //     imageState.url = "";
-        //     imageState.targetBlank = false;
-        //     imageState.disableRemove = true;
-        // }
-
-        //　初期値
-        imageState.src = "";
-        imageState.disableRemove = true;
-    
-        //　テキスト入力がされてないブロックにのみ画像挿入を許可
-        if (activeBlocksText === "") {
-            imageState.showUrlInput = true;
-            setImageState({ ...imageState });
-            setTimeout(() => urlRef.current.focus(), 0);
-        }
-    };
+    const selection = editorState.getSelection();
+    const isCollapsed = selection.isCollapsed();    // 網掛け時 false
+    if ((props.open === true) && (imageState.showUrlInput === false) && (isCollapsed === true)) {
+        imageState.src = "https://www.appliot.co.jp/wp-content/uploads/2022/02/fc5983a421ff37a15b5e7b32656744a9.png";
+        imageState.showUrlInput = true;
+        setImageState({ ...imageState });
+    }
 
     const imageCancel = (e: any) => {
         e.preventDefault();
@@ -99,54 +75,39 @@ export const ImageDialog = (props: ImageEditorProps) => {
             showUrlInput: false,
             src: "",
             imageKey: null,
-            disableRemove: false,
         });
     }
 
     const imageConfirm = (e: any) => {
-    //    alert("imageConfirm has been excuted");
+        //    alert("imageConfirm has been excuted");
         e.preventDefault();
+        //const {editorState, urlValue, urlType} = state;
+        const { editorState } = state;
         const contentState = editorState.getCurrentContent();
-        const selectionState = editorState.getSelection();
-
-        console.log("### EditorState ###")
-        console.log({raw: convertToRaw(editorState.getCurrentContent())});
-
-        // Entityを作成（entityMapに新しい画像のメタ情報を追加）
         const contentStateWithEntity = contentState.createEntity(
             'IMAGE',
             'IMMUTABLE',
-            { src: imageState.src },
+            { src: imageState.src }
         );
         const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
-        const newEditorState = EditorState.set(editorState, { 
-            currentContent: contentStateWithEntity,
-        });
-        const selection = newEditorState.getSelection();
-
-        console.log("### new EditorState ###")
-        console.log({raw: convertToRaw(newEditorState.getCurrentContent())});
-
-        //The RitchUtils module is a static set of utility functions for 
-        //rich text editing.
+        const newEditorState = EditorState.set(
+            editorState,
+            { currentContent: contentStateWithEntity }
+        );
 
         onToggle(
-            RichUtils.toggleLink (
+            AtomicBlockUtils.insertAtomicBlock(
                 newEditorState,
-                selection,
-                entityKey
+                entityKey,
+                ' '
             )
         )
 
-        console.log("### EditorState ###")
-        console.log({raw: convertToRaw(editorState.getCurrentContent())});
-        
         // Reset statments
         setImageState({
             showUrlInput: false,
             src: "",
             imageKey: null,
-            disableRemove: false,
         });
     }
 
@@ -154,7 +115,7 @@ export const ImageDialog = (props: ImageEditorProps) => {
         <React.Fragment>
             <Dialog open={imageState.showUrlInput} onClose={imageCancel}>
                 <DialogContent>
-                    <TextField 
+                    <TextField
                         autoFocus
                         defaultValue={imageState.src}
                         margin="dense"
@@ -164,10 +125,9 @@ export const ImageDialog = (props: ImageEditorProps) => {
                         fullWidth
                         onChange={(e: any) => {
                             imageState.src = e.currentTarget.value;
-                            setImageState( {...imageState});
+                            setImageState({ ...imageState });
                         }}
                         variant="standard"
-                        inputRef={urlRef}
                     />
                 </DialogContent>
                 <DialogActions>

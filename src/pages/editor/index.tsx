@@ -1,5 +1,6 @@
-import React, { useState, useRef, useReducer} from "react";
+import React, { useState, useRef, useReducer } from "react";
 import { Editor, EditorState, RichUtils, getDefaultKeyBinding, CompositeDecorator, convertToRaw, convertFromRaw, SelectionState, } from 'draft-js';
+import { Box } from '@mui/material'
 import { stateToHTML } from 'draft-js-export-html';
 import * as Link from "./Components/Link"
 import * as Image from "./Components/Image"
@@ -11,7 +12,11 @@ import './richeditor.css'
 
 const compositeDecorator = new CompositeDecorator([Link.decorator]);
 
-const styleMap = {
+const colors = ['#000000', '#D0021B', '#F5A623', '#F8E71C', '#8B572A', '#7ED321', '#417505',
+    '#BD10E0', '#9013FE', '#4A90E2', '#50E3C2', '#B8E986',
+    '#4A4A4A', '#9B9B9B', '#FFFFFF'];
+
+const styleMap: any = {
     CODE: {
         backgroundColor: 'rgba(0, 0, 0, 0.05)',
         fontFamily: '"Inconsolata", "Menlo", "Consolas", monospace',
@@ -19,6 +24,9 @@ const styleMap = {
         padding: 2,
     },
 };
+colors.forEach((elm) => {
+    styleMap[elm] = { color: elm }
+})
 function getBlockStyle(block: any): any {
     switch (block.getType()) {
         case 'blockquote': return 'RichEditor-blockquote';
@@ -64,7 +72,24 @@ const BlockStyleControls = (props: any) => {
         .getType();
 
     return (
-        <div className="RichEditor-controls">
+        <Box
+            component="div"
+            className="RichEditor-controls"
+            sx={{
+                display: 'inline',
+                p: 1,
+                m: 1,
+                bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#101010' : '#fff'),
+                color: (theme) =>
+                    theme.palette.mode === 'dark' ? 'grey.300' : 'grey.800',
+                border: '1px solid',
+                borderColor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'grey.800' : 'grey.300',
+                borderRadius: 2,
+                fontSize: '0.875rem',
+                fontWeight: '700',
+            }}
+        >
             {BLOCK_TYPES.map((type) =>
                 <StyleButton
                     key={type.label}
@@ -74,7 +99,7 @@ const BlockStyleControls = (props: any) => {
                     style={type.style}
                 />
             )}
-        </div>
+        </Box>
     );
 };
 
@@ -88,7 +113,25 @@ const InlineStyleControls = (props: any) => {
     const { editorState } = props;
     const currentStyle = editorState.getCurrentInlineStyle();
     return (
-        <div className="RichEditor-controls">
+        <Box
+            component="div"
+            className="RichEditor-controls"
+            sx={{
+                display: 'inline',
+                p: 1,
+                m: 1,
+                bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#101010' : '#fff'),
+                color: (theme) =>
+                    theme.palette.mode === 'dark' ? 'grey.300' : 'grey.800',
+                border: '1px solid',
+                borderColor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'grey.800' : 'grey.300',
+                borderRadius: 2,
+                fontSize: '0.875rem',
+                fontWeight: '700',
+            }}
+        >
+
             {INLINE_STYLES.map((type) =>
                 <StyleButton
                     key={type.label}
@@ -98,7 +141,7 @@ const InlineStyleControls = (props: any) => {
                     style={type.style}
                 />
             )}
-        </div>
+        </Box>
     );
 };
 const LinkStyleControls = (props: any) => {
@@ -112,7 +155,7 @@ const LinkStyleControls = (props: any) => {
         props.onToggle(editorState);
     }
     return (
-        <div className="RichEditor-controls">
+        <React.Fragment>
             <span className={className} onMouseDown={(e) => {
                 e.preventDefault();
                 if (Link.isEnable(props)) setOpen(true);
@@ -126,7 +169,7 @@ const LinkStyleControls = (props: any) => {
                 onToggle={onToggle}
                 style={"LINK"}
             />
-        </div>
+        </React.Fragment>
     );
 };
 
@@ -134,20 +177,18 @@ const ImageStyleControls = (props: any) => {
 
     const [open, setOpen] = useState(false);
     let className = 'RichEditor-styleButton';
-
     const onToggle = (editorState: any) => {
         setOpen(false);
         props.onToggle(editorState);
     }
-
     return (
-        <div className="RichEditor-controls">
+        <React.Fragment>
             <span className={className} onMouseDown={(e) => {
                 e.preventDefault();
-                setOpen(true);
+                if (Image.isEnable(props)) setOpen(true);
             }}>Image
             </span>
-            <Image.ImageDialog 
+            <Image.ImageDialog
                 key={"Image"}
                 open={open}
                 label={"Image"}
@@ -155,7 +196,7 @@ const ImageStyleControls = (props: any) => {
                 onToggle={onToggle}
                 style={"IMAGE"}
             />
-        </div>
+        </React.Fragment>
     )
 };
 
@@ -202,34 +243,6 @@ const initData: any = {
             "inlineStyleRanges": [],
             "entityRanges": [],
             "data": {}
-        },
-        {
-            key: "98peb",
-            text: "https://cdn-ak.f.st-hatena.com/images/fotolife/k/kota_ly/20220214/20220214194911.png",
-            type: "atomic",
-            depth: 0,
-            inlineStyleRanges: [],
-            entityRanges: [
-                {
-                    offset: 0,
-                    length: 1,
-                    key: 1,
-                }
-            ]
-        },
-        {
-            key: "98pec",
-            text: "https://cdn-ak.f.st-hatena.com/images/fotolife/k/kota_ly/20220214/20220214194911.png",
-            type: "atomic",
-            depth: 0,
-            inlineStyleRanges: [],
-            entityRanges: [
-                {
-                    offset: 0,
-                    length: 1,
-                    key: 2,
-                }
-            ]
         }
     ],
     "entityMap": {
@@ -240,22 +253,8 @@ const initData: any = {
                 "url": "https:/www.yahoo.co.jp",
                 "target": "_blank"
             }
-        },
-        1: {
-            "type": "IMAGE",
-            "mutability": "IMMUTABLE",
-            "data": { 
-                "src": "https://cdn-ak.f.st-hatena.com/images/fotolife/k/kota_ly/20220214/20220214194911.png"
-            },
-        },
-        2: {
-            "type": "IMAGE",
-            "mutability": "IMMUTABLE",
-            "data": { 
-                "src": "https://cdn-ak.f.st-hatena.com/images/fotolife/k/kota_ly/20220214/20220214194911.png"
-            },
-        },
-    },
+        }
+    }
 }
 
 export function EditorApp(props: any) {
@@ -267,7 +266,6 @@ export function EditorApp(props: any) {
         html: stateToHTML(editorState.getCurrentContent()),
         raw: convertToRaw(editorState.getCurrentContent())
     });
-
     const onChange = (editorState: any) => {
         state.editorState = editorState;
         setState({ ...state });
@@ -275,7 +273,7 @@ export function EditorApp(props: any) {
     const handleKeyCommand = (command: any, state: any): any => {
         const newEditorState = RichUtils.handleKeyCommand(editorState, command);
         if (newEditorState) {
-            onChange({ editorState: newEditorState });
+            onChange(newEditorState);
             return true;
         }
         return false;
@@ -315,36 +313,47 @@ export function EditorApp(props: any) {
         onChange(RichUtils.toggleInlineStyle(editorState, inlineStyle));
     }
 
-    const myBlockRenderer = (block: any) => {
-        if(block.getType() === "atomic") {
-            return {
-                component: Image.Media,
-                editable: false,
-            };
-        }
-        return null
-    }
-
     return (
         <div className="RichEditor-root">
-            <BlockStyleControls
-                editorState={editorState}
-                onToggle={toggleBlockType}
-            />
-            <InlineStyleControls
-                editorState={editorState}
-                onToggle={toggleInlineStyle}
-            />
-            <LinkStyleControls
-                state={state}
-                setState={setState}
-                onToggle={onChange}
-            />
-            <ImageStyleControls
-                state={state}
-                setState={setState}
-                onToggle={onChange}
-            />
+            <div style={{ width: '100%' }}>
+                <BlockStyleControls
+                    editorState={editorState}
+                    onToggle={toggleBlockType}
+                />
+                <InlineStyleControls
+                    editorState={editorState}
+                    onToggle={toggleInlineStyle}
+                />
+                <Box
+                    component="div"
+                    className="RichEditor-controls"
+                    sx={{
+                        display: 'inline',
+                        p: 1,
+                        m: 1,
+                        bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#101010' : '#fff'),
+                        color: (theme) =>
+                            theme.palette.mode === 'dark' ? 'grey.300' : 'grey.800',
+                        border: '1px solid',
+                        borderColor: (theme) =>
+                            theme.palette.mode === 'dark' ? 'grey.800' : 'grey.300',
+                        borderRadius: 2,
+                        fontSize: '0.875rem',
+                        fontWeight: '700',
+                    }}
+                >
+
+                    <LinkStyleControls
+                        state={state}
+                        onToggle={onChange}
+                    />
+                    <ImageStyleControls
+                        state={state}
+                        setState={setState}
+                        onToggle={onChange}
+                    />
+                </Box>
+            </div>
 
             <div className={className}>
                 <Editor
@@ -356,7 +365,7 @@ export function EditorApp(props: any) {
                     onChange={onChange}
                     placeholder="Tell a story..."
                     spellCheck={true}
-                    blockRendererFn={myBlockRenderer}
+                    blockRendererFn={Image.mediaBlockRenderer}
                 />
             </div>
         </div>
