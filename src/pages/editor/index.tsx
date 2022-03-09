@@ -3,7 +3,7 @@ import { Editor, EditorState, RichUtils, getDefaultKeyBinding, CompositeDecorato
 import { Box } from '@mui/material'
 import { stateToHTML } from 'draft-js-export-html';
 import * as Link from "./Components/Link"
-import * as Image from "./Components/Image"
+import * as Media from "./Components/Media"
 import { ColorPicker } from './Components/Color';
 import { EditorStateType } from './common'
 
@@ -174,7 +174,7 @@ const LinkStyleControls = (props: any) => {
     );
 };
 
-const ImageStyleControls = (props: any) => {
+const MediaStyleControls = (props: any) => {
 
     const [open, setOpen] = useState(false);
     let className = 'RichEditor-styleButton';
@@ -186,10 +186,10 @@ const ImageStyleControls = (props: any) => {
         <React.Fragment>
             <span className={className} onMouseDown={(e) => {
                 e.preventDefault();
-                if (Image.isEnable(props)) setOpen(true);
-            }}>Image
+                if (Media.isEnable(props)) setOpen(true);
+            }}>{props.type}
             </span>
-            <Image.ImageDialog
+            <Media.ImageDialog
                 key={"Image"}
                 open={open}
                 label={"Image"}
@@ -348,10 +348,17 @@ export function EditorApp(props: any) {
                         state={state}
                         onToggle={onChange}
                     />
-                    <ImageStyleControls
+                    <MediaStyleControls
                         state={state}
                         setState={setState}
                         onToggle={onChange}
+                        type="Image"
+                    />
+                    <MediaStyleControls
+                        state={state}
+                        setState={setState}
+                        onToggle={onChange}
+                        type="Video"
                     />
                     <ColorPicker
                         state={state}
@@ -371,7 +378,7 @@ export function EditorApp(props: any) {
                     onChange={onChange}
                     placeholder="Tell a story..."
                     spellCheck={true}
-                    blockRendererFn={Image.mediaBlockRenderer}
+                    blockRendererFn={Media.mediaBlockRenderer}
                 />
             </div>
         </div>
