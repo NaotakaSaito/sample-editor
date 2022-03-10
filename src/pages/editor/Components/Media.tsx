@@ -30,6 +30,14 @@ const Imgtag = (props: any) => {
     return <img src={props.src} alt="" />;
 };
 
+const Videotag = (props: any) => {
+    const src="//www.youtube.com/embed/" + props.src;
+    return (
+        <iframe src={src}
+        width="400" height="200" ></iframe>
+    )
+};
+
 export const mediaBlockRenderer = (block: Draft.ContentBlock) => {
     if (block.getType() === 'atomic') {
         return {
@@ -50,6 +58,8 @@ export const Media = (props: any) => {
     let media;
     if (type === "IMAGE") {
         media = <Imgtag src={src} />;
+    }else if( type === "VIDEO"){
+        media = <Videotag src={src} />;
     }
     return media;
 }
@@ -133,6 +143,91 @@ export const ImageDialog = (props: ImageEditorProps) => {
                 <DialogActions>
                     <Button onClick={imageCancel}>Cancel</Button>
                     <Button onClick={imageConfirm}>OK</Button>
+                </DialogActions>
+            </Dialog>
+        </React.Fragment>
+    );
+}
+
+export const VideoDialog = (props: ImageEditorProps) => {
+    const { state, onToggle } = props;
+    const { editorState } = state;
+    const [videoState, setVideoState] = useState<{ showUrlInput: boolean; src: string; videoKey: null | string }>
+        ({ showUrlInput: false, src: "", videoKey: null })
+
+    const selection = editorState.getSelection();
+    const isCollapsed = selection.isCollapsed();    // 網掛け時 false
+    if ((props.open === true) && (videoState.showUrlInput === false) && (isCollapsed === true)) {
+        videoState.src = "L0MK7qz13bU";
+        videoState.showUrlInput = true;
+        setVideoState({ ...videoState });
+    }
+
+    const videoCancel = (e: any) => {
+        e.preventDefault();
+        onToggle(editorState);
+        setVideoState({
+            showUrlInput: false,
+            src: "",
+            videoKey: null,
+        });
+    }
+
+    const videoConfirm = (e: any) => {
+        //    alert("imageConfirm has been excuted");
+        e.preventDefault();
+        //const {editorState, urlValue, urlType} = state;
+        const { editorState } = state;
+        const contentState = editorState.getCurrentContent();
+        const contentStateWithEntity = contentState.createEntity(
+            'VIDEO',
+            'IMMUTABLE',
+            { src: videoState.src }
+        );
+        const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
+        const newEditorState = EditorState.set(
+            editorState,
+            { currentContent: contentStateWithEntity }
+        );
+
+        onToggle(
+            AtomicBlockUtils.insertAtomicBlock(
+                newEditorState,
+                entityKey,
+                ' '
+            )
+        )
+
+        // Reset statments
+        setVideoState({
+            showUrlInput: false,
+            src: "",
+            videoKey: null,
+        });
+    }
+
+    return (
+        <React.Fragment>
+            <Dialog open={videoState.showUrlInput} onClose={videoCancel}>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        defaultValue={videoState.src}
+                        margin="dense"
+                        id="url"
+                        label="URL"
+                        type="url"
+                        fullWidth
+                        onChange={(e: any) => {
+                            videoState.src = e.currentTarget.value;
+                            setVideoState({ ...videoState });
+                        }}
+                        variant="standard"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={videoCancel}>Cancel</Button>
+                    <Button onClick={videoConfirm}>OK</Button>
                 </DialogActions>
             </Dialog>
         </React.Fragment>
