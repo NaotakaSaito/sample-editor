@@ -12,9 +12,12 @@ const styles = {
     },
 };
 
-interface ImageEditorProps extends EditorStateProps {
+interface MediaEditorProps extends EditorStateProps {
     onToggle: (editorState: EditorState) => void;
     open: boolean;
+    ikey: string;
+    ilabel: string;
+    istyle: string;
 }
 
 export const isEnable = (props: EditorStateProps): boolean => {
@@ -64,40 +67,45 @@ export const Media = (props: any) => {
     return media;
 }
 
-export const ImageDialog = (props: ImageEditorProps) => {
+export const MediaDialog = (props: MediaEditorProps) => {
     const { state, onToggle } = props;
     const { editorState } = state;
-    const [imageState, setImageState] = useState<{ showUrlInput: boolean; src: string; imageKey: null | string }>
-        ({ showUrlInput: false, src: "", imageKey: null })
+    const [mediaState, setMediaState] = useState<{ showUrlInput: boolean; src: string; mediaKey: null | string }>
+        ({ showUrlInput: false, src: "", mediaKey: null })
 
     const selection = editorState.getSelection();
-    const isCollapsed = selection.isCollapsed();    // 網掛け時 false
-    if ((props.open === true) && (imageState.showUrlInput === false) && (isCollapsed === true)) {
-        imageState.src = "https://www.appliot.co.jp/wp-content/uploads/2022/02/fc5983a421ff37a15b5e7b32656744a9.png";
-        imageState.showUrlInput = true;
-        setImageState({ ...imageState });
+    const isCollapsed = selection.isCollapsed();
+
+    if ((props.open === true) && (mediaState.showUrlInput === false) && (isCollapsed === true)) {
+        if(props.ikey === "Video"){
+            mediaState.src = "A_ighLADtZU";
+        }else{
+            mediaState.src = "https://www.appliot.co.jp/wp-content/uploads/2022/02/fc5983a421ff37a15b5e7b32656744a9.png";
+        }
+        mediaState.showUrlInput = true;
+        setMediaState({ ...mediaState });
     }
 
-    const imageCancel = (e: any) => {
+    const mediaCancel = (e: any) => {
         e.preventDefault();
         onToggle(editorState);
-        setImageState({
+        setMediaState({
             showUrlInput: false,
             src: "",
-            imageKey: null,
+            mediaKey: null,
         });
     }
 
-    const imageConfirm = (e: any) => {
+    const mediaConfirm = (e: any) => {
         //    alert("imageConfirm has been excuted");
         e.preventDefault();
         //const {editorState, urlValue, urlType} = state;
         const { editorState } = state;
         const contentState = editorState.getCurrentContent();
         const contentStateWithEntity = contentState.createEntity(
-            'IMAGE',
+            props.istyle,
             'IMMUTABLE',
-            { src: imageState.src }
+            { src: mediaState.src }
         );
         const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
         const newEditorState = EditorState.set(
@@ -114,122 +122,66 @@ export const ImageDialog = (props: ImageEditorProps) => {
         )
 
         // Reset statments
-        setImageState({
+        setMediaState({
             showUrlInput: false,
             src: "",
-            imageKey: null,
+            mediaKey: null,
         });
     }
 
-    return (
-        <React.Fragment>
-            <Dialog open={imageState.showUrlInput} onClose={imageCancel}>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        defaultValue={imageState.src}
-                        margin="dense"
-                        id="url"
-                        label="URL"
-                        type="url"
-                        fullWidth
-                        onChange={(e: any) => {
-                            imageState.src = e.currentTarget.value;
-                            setImageState({ ...imageState });
-                        }}
-                        variant="standard"
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={imageCancel}>Cancel</Button>
-                    <Button onClick={imageConfirm}>OK</Button>
-                </DialogActions>
-            </Dialog>
-        </React.Fragment>
-    );
-}
-
-export const VideoDialog = (props: ImageEditorProps) => {
-    const { state, onToggle } = props;
-    const { editorState } = state;
-    const [videoState, setVideoState] = useState<{ showUrlInput: boolean; src: string; videoKey: null | string }>
-        ({ showUrlInput: false, src: "", videoKey: null })
-
-    const selection = editorState.getSelection();
-    const isCollapsed = selection.isCollapsed();    // 網掛け時 false
-    if ((props.open === true) && (videoState.showUrlInput === false) && (isCollapsed === true)) {
-        videoState.src = "L0MK7qz13bU";
-        videoState.showUrlInput = true;
-        setVideoState({ ...videoState });
-    }
-
-    const videoCancel = (e: any) => {
-        e.preventDefault();
-        onToggle(editorState);
-        setVideoState({
-            showUrlInput: false,
-            src: "",
-            videoKey: null,
-        });
-    }
-
-    const videoConfirm = (e: any) => {
-        //    alert("imageConfirm has been excuted");
-        e.preventDefault();
-        //const {editorState, urlValue, urlType} = state;
-        const { editorState } = state;
-        const contentState = editorState.getCurrentContent();
-        const contentStateWithEntity = contentState.createEntity(
-            'VIDEO',
-            'IMMUTABLE',
-            { src: videoState.src }
+    if(props.ikey === "Video"){
+        return (
+            <React.Fragment>
+                <Dialog open={mediaState.showUrlInput} onClose={mediaCancel}>
+                    <DialogContent>
+                        <TextField
+                            autoFocus
+                            defaultValue={mediaState.src}
+                            margin="dense"
+                            id="url"
+                            label="URL"
+                            type="url"
+                            fullWidth
+                            onChange={(e: any) => {
+                                mediaState.src = e.currentTarget.value;
+                                setMediaState({ ...mediaState });
+                            }}
+                            variant="standard"
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={mediaCancel}>Cancel</Button>
+                        <Button onClick={mediaConfirm}>OK</Button>
+                    </DialogActions>
+                </Dialog>
+            </React.Fragment>
         );
-        const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
-        const newEditorState = EditorState.set(
-            editorState,
-            { currentContent: contentStateWithEntity }
+    }else{
+        return (
+            <React.Fragment>
+                <Dialog open={mediaState.showUrlInput} onClose={mediaCancel}>
+                    <DialogContent>
+                        <TextField
+                            autoFocus
+                            defaultValue={mediaState.src}
+                            margin="dense"
+                            id="url"
+                            label="URL"
+                            type="url"
+                            fullWidth
+                            onChange={(e: any) => {
+                                mediaState.src = e.currentTarget.value;
+                                setMediaState({ ...mediaState });
+                            }}
+                            variant="standard"
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={mediaCancel}>Cancel</Button>
+                        <Button onClick={mediaConfirm}>OK</Button>
+                    </DialogActions>
+                </Dialog>
+            </React.Fragment>
         );
-
-        onToggle(
-            AtomicBlockUtils.insertAtomicBlock(
-                newEditorState,
-                entityKey,
-                ' '
-            )
-        )
-
-        // Reset statments
-        setVideoState({
-            showUrlInput: false,
-            src: "",
-            videoKey: null,
-        });
     }
-
-    return (
-        <React.Fragment>
-            <Dialog open={videoState.showUrlInput} onClose={videoCancel}>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        defaultValue={videoState.src}
-                        margin="dense"
-                        id="url"
-                        label="URL"
-                        type="url"
-                        fullWidth
-                        onChange={(e: any) => {
-                            videoState.src = e.currentTarget.value;
-                            setVideoState({ ...videoState });
-                        }}
-                        variant="standard"
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={videoCancel}>Cancel</Button>
-                    <Button onClick={videoConfirm}>OK</Button>
-                </DialogActions>
-            </Dialog>
-        </React.Fragment>
-    );
 }

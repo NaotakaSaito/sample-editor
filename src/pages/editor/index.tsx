@@ -178,55 +178,39 @@ const MediaStyleControls = (props: any) => {
 
     const [open, setOpen] = useState(false);
     let className = 'RichEditor-styleButton';
-    const mediaType = props.mediaType;
+    let ikey: string, ilabel: string, istyle: string;
     const onToggle = (editorState: any) => {
         setOpen(false);
         props.onToggle(editorState);
     }
 
-    if(mediaType==="Video"){
-            //<VideoDialog />
-            return(
-                <React.Fragment>
-                    <span className={className} onMouseDown={(e) => {
-                        e.preventDefault();
-                        if (Media.isEnable(props)) setOpen(true);
-                    }}>{mediaType}
-                    </span>
-                    <Media.VideoDialog
-                        key={"Video"}
-                        open={open}
-                        label={"Image"}
-                        {...props}
-                        onToggle={onToggle}
-                        style={"IMAGE"}
-                    />
-                </React.Fragment>
-            )
+    if(props.mediaType==="Video"){
+        ikey = "Video";
+        ilabel = "Video";
+        istyle = "VIDEO";
     }else{
-        return(
-            <React.Fragment>
-                <span className={className} onMouseDown={(e) => {
-                    e.preventDefault();
-                    if (Media.isEnable(props)) setOpen(true);
-                }}>{mediaType}
-                </span>
-                <Media.ImageDialog
-                    key={"Image"}
-                    open={open}
-                    label={"Image"}
-                    {...props}
-                    onToggle={onToggle}
-                    style={"IMAGE"}
-                />
-            </React.Fragment>
-        )
+        ikey = "Image";
+        ilabel = "Image";
+        istyle = "IMAGE";
     }
+    return(
+        <React.Fragment>
+            <span className={className} onMouseDown={(e) => {
+                e.preventDefault();
+                if (Media.isEnable(props)) setOpen(true);
+            }}>{props.mediaType}
+            </span>
+            <Media.MediaDialog
+                ikey={ikey}
+                open={open}
+                ilabel={ilabel}
+                {...props}
+                onToggle={onToggle}
+                istyle={istyle}
+            />
+        </React.Fragment>
+    )
 };
-
-const ImageDialog = (props: any) => {
-    
-}
 
 const initData: any = {
     "blocks": [
