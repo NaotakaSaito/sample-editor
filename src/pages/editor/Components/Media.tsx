@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { EditorState, AtomicBlockUtils } from 'draft-js';
 import { FormGroup, FormControlLabel, Checkbox, Button, TextField, Dialog, DialogActions, DialogContent } from '@mui/material'
 import { EditorStateType, EditorStateProps } from '../common';
-import { BooleanLiteral } from "typescript";
+import { BooleanLiteral, isJSDocNullableType } from "typescript";
 import { getAllByPlaceholderText, queryAllByAttribute } from "@testing-library/react";
 
 const styles = {
@@ -15,9 +15,8 @@ const styles = {
 interface MediaEditorProps extends EditorStateProps {
     onToggle: (editorState: EditorState) => void;
     open: boolean;
-    ikey: string;
-    ilabel: string;
-    istyle: string;
+    label: string;
+    style: string;
 }
 
 export const isEnable = (props: EditorStateProps): boolean => {
@@ -37,7 +36,7 @@ const Videotag = (props: any) => {
     const src="//www.youtube.com/embed/" + props.src;
     return (
         <iframe src={src}
-        width="400" height="200" ></iframe>
+        width={props.width} height={props.height} ></iframe>
     )
 };
 
@@ -55,14 +54,14 @@ export const mediaBlockRenderer = (block: Draft.ContentBlock) => {
 // 
 export const Media = (props: any) => {
     const entity = props.contentState.getEntity(props.block.getEntityAt(0));
-    const { src } = entity.getData();
+    const { src, height, width } = entity.getData();
     const type = entity.getType();
 
     let media;
     if (type === "IMAGE") {
-        media = <Imgtag src={src} />;
+        media = <Imgtag src={src} height={height} width={width} />;
     }else if( type === "VIDEO"){
-        media = <Videotag src={src} />;
+        media = <Videotag src={src} height={height} width={width}/>;
     }
     return media;
 }
@@ -70,14 +69,16 @@ export const Media = (props: any) => {
 export const MediaDialog = (props: MediaEditorProps) => {
     const { state, onToggle } = props;
     const { editorState } = state;
-    const [mediaState, setMediaState] = useState<{ showUrlInput: boolean; src: string; mediaKey: null | string }>
-        ({ showUrlInput: false, src: "", mediaKey: null })
+    const [mediaState, setMediaState] = useState<{ showUrlInput: boolean; src: string; width: number; height: number; mediaKey: null | string }>
+        ({ showUrlInput: false, src: "", width: 400, height: 200, mediaKey: null })
 
     const selection = editorState.getSelection();
     const isCollapsed = selection.isCollapsed();
 
+
+
     if ((props.open === true) && (mediaState.showUrlInput === false) && (isCollapsed === true)) {
-        if(props.ikey === "Video"){
+        if(props.label === "Video"){
             mediaState.src = "A_ighLADtZU";
         }else{
             mediaState.src = "https://www.appliot.co.jp/wp-content/uploads/2022/02/fc5983a421ff37a15b5e7b32656744a9.png";
@@ -92,20 +93,20 @@ export const MediaDialog = (props: MediaEditorProps) => {
         setMediaState({
             showUrlInput: false,
             src: "",
+            width: 400,
+            height: 200,
             mediaKey: null,
         });
     }
 
     const mediaConfirm = (e: any) => {
-        //    alert("imageConfirm has been excuted");
         e.preventDefault();
-        //const {editorState, urlValue, urlType} = state;
         const { editorState } = state;
         const contentState = editorState.getCurrentContent();
         const contentStateWithEntity = contentState.createEntity(
-            props.istyle,
+            props.style,
             'IMMUTABLE',
-            { src: mediaState.src }
+            { src: mediaState.src, width: mediaState.width, height: mediaState.height}
         );
         const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
         const newEditorState = EditorState.set(
@@ -125,11 +126,13 @@ export const MediaDialog = (props: MediaEditorProps) => {
         setMediaState({
             showUrlInput: false,
             src: "",
+            width: 400,
+            height: 200,
             mediaKey: null,
         });
     }
 
-    if(props.ikey === "Video"){
+    if(props.label === "Video"){
         return (
             <React.Fragment>
                 <Dialog open={mediaState.showUrlInput} onClose={mediaCancel}>
@@ -147,6 +150,32 @@ export const MediaDialog = (props: MediaEditorProps) => {
                                 setMediaState({ ...mediaState });
                             }}
                             variant="standard"
+                        />
+                        <TextField 
+                            defaultValue={mediaState.height}
+                            margin="dense"
+                            id="height"
+                            label="HEIGHT"
+                            type="number"
+                            onChange={(e: any) => {
+                                mediaState.height = e.currentTarget.value;
+                                setMediaState({ ...mediaState });
+                            }}
+                            variant="outlined"
+                            size="small"
+                        />
+                        <TextField 
+                            defaultValue={mediaState.width}
+                            margin="dense"
+                            id="width"
+                            label="WIDTH"
+                            type="number"
+                            onChange={(e: any) => {
+                                mediaState.width = e.currentTarget.value;
+                                setMediaState({ ...mediaState });
+                            }}
+                            variant="outlined"
+                            size="small"
                         />
                     </DialogContent>
                     <DialogActions>

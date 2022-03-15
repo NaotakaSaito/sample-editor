@@ -178,21 +178,22 @@ const MediaStyleControls = (props: any) => {
 
     const [open, setOpen] = useState(false);
     let className = 'RichEditor-styleButton';
-    let ikey: string, ilabel: string, istyle: string;
+    let key: string, label: string, style: string;
     const onToggle = (editorState: any) => {
         setOpen(false);
         props.onToggle(editorState);
     }
 
     if(props.mediaType==="Video"){
-        ikey = "Video";
-        ilabel = "Video";
-        istyle = "VIDEO";
+        key = "Video";
+        label = "Video";
+        style = "VIDEO";
     }else{
-        ikey = "Image";
-        ilabel = "Image";
-        istyle = "IMAGE";
+        key = "Image";
+        label = "Image";
+        style = "IMAGE";
     }
+    
     return(
         <React.Fragment>
             <span className={className} onMouseDown={(e) => {
@@ -201,12 +202,11 @@ const MediaStyleControls = (props: any) => {
             }}>{props.mediaType}
             </span>
             <Media.MediaDialog
-                ikey={ikey}
                 open={open}
-                ilabel={ilabel}
+                label={label}
+                style={style}
                 {...props}
                 onToggle={onToggle}
-                istyle={istyle}
             />
         </React.Fragment>
     )
