@@ -1,17 +1,21 @@
-import React, { useState, useRef, useReducer } from "react";
-import { Editor, EditorState, RichUtils, getDefaultKeyBinding, CompositeDecorator, convertToRaw, convertFromRaw, SelectionState, } from 'draft-js';
-import { Box } from '@mui/material'
+import React, { useState } from "react";
+import { Editor, EditorState, RichUtils, getDefaultKeyBinding, CompositeDecorator, convertToRaw, convertFromRaw, convertFromHTML, ContentState } from 'draft-js';
 import { stateToHTML } from 'draft-js-export-html';
+
+import { Box } from '@mui/material'
 import * as Link from "./Components/Link"
+import * as Divider from "./Components/Divider"
 import * as Media from "./Components/Media"
 import { ColorPicker } from './Components/Color';
 import { EditorStateType } from './common'
+import { EditorMenu } from './EditorMenu';
 
 import 'draft-js/dist/Draft.css';
 import './richeditor.css'
 
 
 const compositeDecorator = new CompositeDecorator([Link.decorator]);
+const blockRenderers = [Media.blockRenderer, Divider.blockRenderer]
 
 const colors = ['#000000', '#D0021B', '#F5A623', '#F8E71C', '#8B572A', '#7ED321', '#417505',
     '#BD10E0', '#9013FE', '#4A90E2', '#50E3C2', '#B8E986',
@@ -103,7 +107,6 @@ const BlockStyleControls = (props: any) => {
         </Box>
     );
 };
-
 var INLINE_STYLES = [
     { label: 'Bold', style: 'BOLD' },
     { label: 'Italic', style: 'ITALIC' },
@@ -174,6 +177,19 @@ const LinkStyleControls = (props: any) => {
     );
 };
 
+const DividerControls = (props: any) => {
+    const className = 'RichEditor-styleButton';
+    return (
+        <React.Fragment>
+            <span className={className} onMouseDown={(e) => {
+                e.preventDefault();
+                Divider.onClick(props);
+            }}>Div
+            </span>
+        </React.Fragment>
+    )
+}
+
 const MediaStyleControls = (props: any) => {
 
     const [open, setOpen] = useState(false);
@@ -184,17 +200,17 @@ const MediaStyleControls = (props: any) => {
         props.onToggle(editorState);
     }
 
-    if(props.mediaType==="Video"){
+    if (props.mediaType === "Video") {
         key = "Video";
         label = "Video";
         style = "VIDEO";
-    }else{
+    } else {
         key = "Image";
         label = "Image";
         style = "IMAGE";
     }
-    
-    return(
+
+    return (
         <React.Fragment>
             <span className={className} onMouseDown={(e) => {
                 e.preventDefault();
@@ -269,15 +285,27 @@ const initData: any = {
     }
 }
 
-export function EditorApp(props: any) {
+export const convertToHTML = (contentState: ContentState) => {
+    return stateToHTML(contentState, {
+        blockRenderers: {
+            "HR": (block) => {
+                return '<hr />'
+            }
+        }
+    })
+
+}
+export const EditorApp = (props: any) => {
     const [state, setState] = React.useState<EditorStateType>({
-        editorState: EditorState.createWithContent(convertFromRaw(initData), compositeDecorator)
+        editorState: EditorState.createEmpty(compositeDecorator)
     });
     const { editorState } = state;
+    /*
     console.log({
-        html: stateToHTML(editorState.getCurrentContent()),
+        html: convertToHTML(editorState.getCurrentContent()),
         raw: convertToRaw(editorState.getCurrentContent())
     });
+    */
     const onChange = (editorState: any) => {
         state.editorState = editorState;
         setState({ ...state });
@@ -326,73 +354,98 @@ export function EditorApp(props: any) {
     }
 
     return (
-        <div className="RichEditor-root">
-            <div style={{ width: '100%' }}>
-                <BlockStyleControls
-                    editorState={editorState}
-                    onToggle={toggleBlockType}
-                />
-                <InlineStyleControls
-                    editorState={editorState}
-                    onToggle={toggleInlineStyle}
-                />
-                <Box
-                    component="div"
-                    className="RichEditor-controls"
-                    sx={{
-                        display: 'inline',
-                        p: 1,
-                        m: 1,
-                        bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#101010' : '#fff'),
-                        color: (theme) =>
-                            theme.palette.mode === 'dark' ? 'grey.300' : 'grey.800',
-                        border: '1px solid',
-                        borderColor: (theme) =>
-                            theme.palette.mode === 'dark' ? 'grey.800' : 'grey.300',
-                        borderRadius: 2,
-                        fontSize: '0.875rem',
-                        fontWeight: '700',
-                    }}
-                >
+        <EditorMenu
+            state={state}
+            onChange={(rawData: any) => {
+                if (rawData === null) {
+                    setState({ editorState: EditorState.createEmpty(compositeDecorator) })
+                } else {
+                    setState({ editorState: EditorState.createWithContent(convertFromRaw(rawData), compositeDecorator) })
+                }
 
-                    <LinkStyleControls
-                        state={state}
-                        onToggle={onChange}
+            }}>
+            <div className="RichEditor-root">
+                <div style={{ width: '100%' }}>
+                    <BlockStyleControls
+                        editorState={editorState}
+                        onToggle={toggleBlockType}
                     />
-                    <MediaStyleControls
-                        state={state}
-                        setState={setState}
-                        onToggle={onChange}
-                        mediaType={"Image"}
+                    <InlineStyleControls
+                        editorState={editorState}
+                        onToggle={toggleInlineStyle}
                     />
-                    <MediaStyleControls
-                        state={state}
-                        setState={setState}
-                        onToggle={onChange}
-                        mediaType={"Video"}
-                    />
-                    <ColorPicker
-                        state={state}
-                        colors={colors}
-                        onToggle={onChange}
-                    />
-                </Box>
-            </div>
+                    <Box
+                        component="div"
+                        className="RichEditor-controls"
+                        sx={{
+                            display: 'inline',
+                            p: 1,
+                            m: 1,
+                            bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#101010' : '#fff'),
+                            color: (theme) =>
+                                theme.palette.mode === 'dark' ? 'grey.300' : 'grey.800',
+                            border: '1px solid',
+                            borderColor: (theme) =>
+                                theme.palette.mode === 'dark' ? 'grey.800' : 'grey.300',
+                            borderRadius: 2,
+                            fontSize: '0.875rem',
+                            fontWeight: '700',
+                        }}
+                    >
+                        <LinkStyleControls
+                            state={state}
+                            onToggle={onChange}
+                        />
+                        <DividerControls
+                            state={state}
+                            setState={setState}
+                            onToggle={onChange}
+                        />
+                        <MediaStyleControls
+                            state={state}
+                            setState={setState}
+                            onToggle={onChange}
+                            mediaType={"Image"}
+                        />
+                        <MediaStyleControls
+                            state={state}
+                            setState={setState}
+                            onToggle={onChange}
+                            mediaType={"Video"}
+                        />
+                        <ColorPicker
+                            state={state}
+                            colors={colors}
+                            onToggle={onChange}
+                        />
+                    </Box>
+                </div>
 
-            <div className={className}>
-                <Editor
-                    blockStyleFn={getBlockStyle}
-                    customStyleMap={styleMap}
-                    editorState={editorState}
-                    handleKeyCommand={handleKeyCommand}
-                    keyBindingFn={mapKeyToEditorCommand}
-                    onChange={onChange}
-                    placeholder="Tell a story..."
-                    spellCheck={true}
-                    blockRendererFn={Media.mediaBlockRenderer}
-                />
+                <div className={className}>
+                    <Editor
+                        blockStyleFn={getBlockStyle}
+                        customStyleMap={styleMap}
+                        editorState={editorState}
+                        handleKeyCommand={handleKeyCommand}
+                        keyBindingFn={mapKeyToEditorCommand}
+                        onChange={onChange}
+                        placeholder=""
+                        spellCheck={true}
+                        blockRendererFn={(block: Draft.ContentBlock) => {
+                            for (const br of blockRenderers) {
+                                const render = br(block);
+                                if (render === null) {
+                                    continue;
+                                } else {
+                                    return render;
+                                }
+                            }
+                        }}
+                    />
+                </div>
             </div>
-        </div>
+        </EditorMenu>
     )
 }
+
 

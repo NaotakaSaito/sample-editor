@@ -33,14 +33,14 @@ const Imgtag = (props: any) => {
 };
 
 const Videotag = (props: any) => {
-    const src="//www.youtube.com/embed/" + props.src;
+    const src = "//www.youtube.com/embed/" + props.src;
     return (
         <iframe src={src}
-        width={props.width} height={props.height} ></iframe>
+            width={props.width} height={props.height} ></iframe>
     )
 };
 
-export const mediaBlockRenderer = (block: Draft.ContentBlock) => {
+export const blockRenderer = (block: Draft.ContentBlock) => {
     if (block.getType() === 'atomic') {
         return {
             component: Media,
@@ -60,8 +60,8 @@ export const Media = (props: any) => {
     let media;
     if (type === "IMAGE") {
         media = <Imgtag src={src} height={height} width={width} />;
-    }else if( type === "VIDEO"){
-        media = <Videotag src={src} height={height} width={width}/>;
+    } else if (type === "VIDEO") {
+        media = <Videotag src={src} height={height} width={width} />;
     }
     return media;
 }
@@ -78,10 +78,10 @@ export const MediaDialog = (props: MediaEditorProps) => {
 
 
     if ((props.open === true) && (mediaState.showUrlInput === false) && (isCollapsed === true)) {
-        if(props.label === "Video"){
-            mediaState.src = "A_ighLADtZU";
-        }else{
-            mediaState.src = "https://www.appliot.co.jp/wp-content/uploads/2022/02/fc5983a421ff37a15b5e7b32656744a9.png";
+        if (props.label === "Video") {
+            mediaState.src = "";
+        } else {
+            mediaState.src = "";
         }
         mediaState.showUrlInput = true;
         setMediaState({ ...mediaState });
@@ -106,7 +106,7 @@ export const MediaDialog = (props: MediaEditorProps) => {
         const contentStateWithEntity = contentState.createEntity(
             props.style,
             'IMMUTABLE',
-            { src: mediaState.src, width: mediaState.width, height: mediaState.height}
+            { src: mediaState.src, width: mediaState.width, height: mediaState.height }
         );
         const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
         const newEditorState = EditorState.set(
@@ -132,7 +132,7 @@ export const MediaDialog = (props: MediaEditorProps) => {
         });
     }
 
-    if(props.label === "Video"){
+    if (props.label === "Video") {
         return (
             <React.Fragment>
                 <Dialog open={mediaState.showUrlInput} onClose={mediaCancel}>
@@ -151,7 +151,7 @@ export const MediaDialog = (props: MediaEditorProps) => {
                             }}
                             variant="standard"
                         />
-                        <TextField 
+                        <TextField
                             defaultValue={mediaState.height}
                             margin="dense"
                             id="height"
@@ -164,7 +164,7 @@ export const MediaDialog = (props: MediaEditorProps) => {
                             variant="outlined"
                             size="small"
                         />
-                        <TextField 
+                        <TextField
                             defaultValue={mediaState.width}
                             margin="dense"
                             id="width"
@@ -185,7 +185,7 @@ export const MediaDialog = (props: MediaEditorProps) => {
                 </Dialog>
             </React.Fragment>
         );
-    }else{
+    } else {
         return (
             <React.Fragment>
                 <Dialog open={mediaState.showUrlInput} onClose={mediaCancel}>
