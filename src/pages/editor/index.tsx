@@ -191,7 +191,6 @@ const DividerControls = (props: any) => {
 }
 
 const MediaStyleControls = (props: any) => {
-
     const [open, setOpen] = useState(false);
     let className = 'RichEditor-styleButton';
     let key: string, label: string, style: string;
@@ -209,7 +208,6 @@ const MediaStyleControls = (props: any) => {
         label = "Image";
         style = "IMAGE";
     }
-
     return (
         <React.Fragment>
             <span className={className} onMouseDown={(e) => {
@@ -300,12 +298,6 @@ export const EditorApp = (props: any) => {
         editorState: EditorState.createEmpty(compositeDecorator)
     });
     const { editorState } = state;
-    /*
-    console.log({
-        html: convertToHTML(editorState.getCurrentContent()),
-        raw: convertToRaw(editorState.getCurrentContent())
-    });
-    */
     const onChange = (editorState: any) => {
         state.editorState = editorState;
         setState({ ...state });

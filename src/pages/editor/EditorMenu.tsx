@@ -10,13 +10,6 @@ import MenuItem from '@mui/material/MenuItem';
 import { PopoverOrigin } from '@mui/material';
 import { convertToRaw } from 'draft-js';
 
-const settings = [
-    { Label: 'Profile' },
-    { Label: 'Account' },
-    { Label: 'Dashboard' },
-    { Label: 'Logout' }
-]
-
 export const UserMenu = ({ anchorEl, onClose, anchorOrigin, transformOrigin, Items }: any) => {
     return (
         <Menu
@@ -203,6 +196,7 @@ export const EditorMenu = ({ state, onChange, children }: any) => {
                                     if (obj) {
                                         onChange(obj);
                                     }
+                                    e.target.value = "";
                                 }).catch((err) => {
                                     console.log(err);
                                 });
