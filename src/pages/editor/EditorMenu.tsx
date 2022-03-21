@@ -1,19 +1,14 @@
-import React, { ReactNode, useRef, FC } from 'react';
+import React, { useRef } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
-import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import { Menu, MenuProps } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import { Menu } from '@mui/material';
 import Container from '@mui/material/Container';
-import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
-import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import { PopoverOrigin } from '@mui/material';
 import { convertToRaw } from 'draft-js';
-import { fileURLToPath } from 'url';
 
 const settings = [
     { Label: 'Profile' },
@@ -22,7 +17,7 @@ const settings = [
     { Label: 'Logout' }
 ]
 
-export const UserMenu = ({ anchorEl, onClick, onClose, anchorOrigin, transformOrigin, Items }: any) => {
+export const UserMenu = ({ anchorEl, onClose, anchorOrigin, transformOrigin, Items }: any) => {
     return (
         <Menu
             sx={{ mt: '45px' }}
@@ -45,15 +40,20 @@ export const UserMenu = ({ anchorEl, onClick, onClose, anchorOrigin, transformOr
 
 export const EditorMenu = ({ state, onChange, children }: any) => {
     const { editorState } = state;
+    const titleInputRef = useRef<HTMLInputElement>(null)
     const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
     const inputFile = useRef<HTMLInputElement>(null);
     const [menuObj, setMenuObj] = React.useState<{
+        editTitle: boolean;
+        title: string;
         anchorEl: null | HTMLElement;
         Items: Array<{ Label: string; }>;
         transformOrigin: null | PopoverOrigin;
         anchorOrigin: null | PopoverOrigin;
         onClick?: (e: React.MouseEventHandler<HTMLLIElement>) => void;
     }>({
+        editTitle: false,
+        title: "unknown.json",
         anchorEl: null,
         Items: [],
         transformOrigin: null,
@@ -64,6 +64,18 @@ export const EditorMenu = ({ state, onChange, children }: any) => {
         {
             Label: 'File',
             Items: [
+                {
+                    Label: "new",
+                    onClick: (e: React.MouseEventHandler<HTMLButtonElement>) => {
+                        menuObj.anchorEl = null;
+                        menuObj.title = "unknown.json";
+                        setMenuObj({ ...menuObj });
+                        onChange({
+                            blocks: [],
+                            entityMap: {}
+                        })
+                    }
+                },
                 {
                     Label: "open",
                     onClick: (e: React.MouseEventHandler<HTMLButtonElement>) => {
@@ -76,15 +88,11 @@ export const EditorMenu = ({ state, onChange, children }: any) => {
                     Label: "save",
                     onClick: (e: React.MouseEventHandler<HTMLButtonElement>) => {
                         const obj = convertToRaw(editorState.getCurrentContent());
-                        const fileName = `${obj.blocks[0]?.text || obj.blocks[0].key}.json`;
-
-                        console.log({ fileName, obj });
-
                         const blob = new Blob([JSON.stringify(obj)], { type: 'text/plain' });
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         document.body.appendChild(a);
-                        a.download = fileName;
+                        a.download = menuObj.title;
                         a.href = url;
                         a.click();
                         a.remove();
@@ -97,21 +105,12 @@ export const EditorMenu = ({ state, onChange, children }: any) => {
             ]
         }
     ];
-    const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorElNav(event.currentTarget);
-    };
-
-    const handleCloseNavMenu = () => {
-        setAnchorElNav(null);
-    };
-
     const handleCloseUserMenu = () => {
         menuObj.anchorEl = null;
         setMenuObj({ ...menuObj });
     };
     return (
         <React.Fragment>
-
             <AppBar position="static">
                 <Container maxWidth="xl">
                     <Toolbar disableGutters>
@@ -119,70 +118,32 @@ export const EditorMenu = ({ state, onChange, children }: any) => {
                             variant="h6"
                             noWrap
                             component="div"
-                            sx={{ mr: 2, display: { xs: 'none', md: 'flex' } }}
+                            sx={{ mr: 2 }}
+                            onDoubleClick={(e: any) => {
+                                menuObj.editTitle = true;
+                                setMenuObj({ ...menuObj });
+                            }}
                         >
-                            LOGO
+                            {menuObj.editTitle === false ?
+                                menuObj.title :
+                                (<input
+                                    defaultValue={menuObj.title}
+                                    ref={titleInputRef}
+                                    onKeyDown={(e) => {
+                                        switch (e.key) {
+                                            case "Enter":
+                                                menuObj.title = titleInputRef.current?.value as string;
+                                                menuObj.editTitle = false;
+                                                setMenuObj({ ...menuObj });
+                                                break;
+                                            case "Escape":
+                                                menuObj.editTitle = false;
+                                                setMenuObj({ ...menuObj });
+                                                break;
+                                        }
+                                    }}></input>)}
                         </Typography>
-
-                        <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
-                            <IconButton
-                                size="large"
-                                aria-label="account of current user"
-                                aria-controls="menu-appbar"
-                                aria-haspopup="true"
-                                onClick={handleOpenNavMenu}
-                                color="inherit"
-                            >
-                                <MenuIcon />
-                            </IconButton>
-                            <Menu
-                                id="menu-appbar"
-                                anchorEl={anchorElNav}
-                                anchorOrigin={{
-                                    vertical: 'bottom',
-                                    horizontal: 'left',
-                                }}
-                                keepMounted
-                                transformOrigin={{
-                                    vertical: 'top',
-                                    horizontal: 'left',
-                                }}
-                                open={Boolean(anchorElNav)}
-                                onClose={handleCloseNavMenu}
-                                sx={{
-                                    display: { xs: 'block', md: 'none' },
-                                }}
-                            >
-                                {pages.map((page) => (
-                                    <MenuItem
-                                        key={page.Label}
-                                        onClick={(e) => {
-                                            menuObj.anchorEl = e.currentTarget;
-                                            menuObj.Items = page.Items;
-                                            menuObj.anchorOrigin = {
-                                                vertical: 'center',
-                                                horizontal: 'right'
-                                            };
-                                            menuObj.transformOrigin = {
-                                                vertical: 'center',
-                                                horizontal: 'right',
-                                            };
-                                            setMenuObj({ ...menuObj });
-                                        }}>
-                                        <Typography textAlign="center">{page.Label}</Typography>
-                                    </MenuItem>
-                                ))}
-                            </Menu>
-                        </Box>
-                        <Typography
-                            variant="h6"
-                            noWrap
-                            component="div"
-                            sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}
-                        >
-                            LOGO
-                        </Typography>
-                        <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
+                        <Box sx={{ flexGrow: 1 }}>
                             {pages.map((page) => (
                                 <Button
                                     key={page.Label}
@@ -204,27 +165,6 @@ export const EditorMenu = ({ state, onChange, children }: any) => {
                                     {page.Label}
                                 </Button>
                             ))}
-                        </Box>
-                        <Box sx={{ flexGrow: 0 }}>
-                            <Tooltip title="Open settings">
-                                <IconButton
-                                    onClick={(e) => {
-                                        menuObj.anchorEl = e.currentTarget;
-                                        menuObj.anchorOrigin = {
-                                            vertical: 'top',
-                                            horizontal: 'right',
-                                        };
-                                        menuObj.transformOrigin = {
-                                            vertical: 'top',
-                                            horizontal: 'right',
-                                        };
-                                        menuObj.Items = settings;
-                                        setMenuObj({ ...menuObj });
-                                    }}
-                                    sx={{ p: 0 }}>
-                                    <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
-                                </IconButton>
-                            </Tooltip>
                         </Box>
 
                         <UserMenu
@@ -252,6 +192,8 @@ export const EditorMenu = ({ state, onChange, children }: any) => {
                                     reader.onload = () => resolve((reader.result as string) || '');
                                     const files = e?.target?.files;
                                     if (files && files.length > 0) {
+                                        menuObj.title = files[0].name;
+                                        setMenuObj({ ...menuObj })
                                         reader.readAsText(files[0]);
                                     } else {
                                         reject({ message: 'file not found' });
@@ -270,7 +212,7 @@ export const EditorMenu = ({ state, onChange, children }: any) => {
                 </Container>
             </AppBar >
             {children}
-        </React.Fragment>
+        </React.Fragment >
     );
 };
 
